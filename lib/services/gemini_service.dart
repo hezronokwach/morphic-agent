@@ -122,8 +122,24 @@ Keep narratives SHORT and friendly. Don't show calculations or ask for more info
 
     Map<String, dynamic> data = {};
     if (intent == morphic.Intent.inventory) {
-      data['products'] = products;
-      print('📦 Added ${products.length} products to data');
+      // Check if specific product requested
+      if (entities.containsKey('product_name')) {
+        final productName = entities['product_name'];
+        final filteredProducts = products.where(
+          (p) => p.name.toLowerCase().contains(productName.toLowerCase())
+        ).toList();
+        
+        if (filteredProducts.isNotEmpty) {
+          data['products'] = filteredProducts;
+          print('📦 Added ${filteredProducts.length} filtered products (${productName})');
+        } else {
+          data['products'] = products;
+          print('📦 No match for "$productName", showing all ${products.length} products');
+        }
+      } else {
+        data['products'] = products;
+        print('📦 Added ${products.length} products to data');
+      }
     } else if (intent == morphic.Intent.finance) {
       data['expenses'] = expenses;
       print('💰 Added ${expenses.length} expenses to data');
