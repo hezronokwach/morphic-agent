@@ -39,7 +39,6 @@ Narrative examples:
 - "Here's your complete product inventory."
 - "Showing expense breakdown by category."
 - "Displaying Nike Air Max product details."
-- "Your total inventory is worth \$7,130."
 
 Keep narratives SHORT and friendly. Don't show calculations or ask for more info.''';
   }
