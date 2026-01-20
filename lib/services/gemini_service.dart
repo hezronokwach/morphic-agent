@@ -14,7 +14,7 @@ class GeminiService {
     final productList = products.map((p) => '${p.name} (${p.category}, stock: ${p.stockCount}, price: \$${p.price})').join(', ');
     final expenseCategories = expenses.map((e) => e.category).toSet().join(', ');
 
-    return '''You are a business assistant for a pet boutique. Analyze user queries and respond with JSON.
+    return '''You are a business assistant for a shoe store. Analyze user queries and respond with JSON.
 
 Available products: $productList
 Expense categories: $expenseCategories
@@ -23,16 +23,25 @@ Respond with this exact JSON structure:
 {
   "intent": "inventory" | "finance" | "retail" | "unknown",
   "ui_mode": "table" | "chart" | "image" | "narrative",
-  "narrative": "Brief response text",
+  "narrative": "Brief, friendly response (1 sentence max)",
   "entities": {"product_name": "...", "product_id": "..."},
   "confidence": 0.0-1.0
 }
 
 Rules:
-- inventory queries → ui_mode: "table"
+- inventory list queries → ui_mode: "table"
 - expense/finance queries → ui_mode: "chart"
-- product photo requests → ui_mode: "image"
-- unclear queries → ui_mode: "narrative", confidence < 0.7''';
+- photo/image/picture requests → ui_mode: "image", intent: "retail"
+- summary/calculation queries → ui_mode: "narrative"
+- unclear queries → ui_mode: "narrative", confidence < 0.7
+
+Narrative examples:
+- "Here's your complete product inventory."
+- "Showing expense breakdown by category."
+- "Displaying Nike Air Max product details."
+- "Your total inventory is worth \$7,130."
+
+Keep narratives SHORT and friendly. Don't show calculations or ask for more info.''';
   }
 
   Future<morphic.MorphicState> analyzeQuery(String userInput) async {
@@ -47,6 +56,8 @@ Rules:
 
       final systemPrompt = _buildSystemPrompt(products, expenses);
       final fullPrompt = '$systemPrompt\n\nUser query: $userInput\n\nRespond with JSON only:';
+
+      print('\n🔵 GEMINI REQUEST: $userInput');
 
       final response = await http
           .post(
@@ -70,14 +81,24 @@ Rules:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('🟢 GEMINI RAW RESPONSE: ${response.body}');
+        
         final content = data['candidates'][0]['content']['parts'][0]['text'];
+        print('🟢 GEMINI PARSED CONTENT: $content');
+        
         final aiResponse = jsonDecode(content);
+        print('🟢 GEMINI AI RESPONSE: $aiResponse');
 
-        return _parseResponse(aiResponse, products, expenses);
+        final result = _parseResponse(aiResponse, products, expenses);
+        print('🟢 FINAL STATE: intent=${result.intent}, uiMode=${result.uiMode}, narrative=${result.narrative}');
+        
+        return result;
       } else {
+        print('🔴 GEMINI ERROR: ${response.statusCode} - ${response.body}');
         return _errorState('API error: ${response.statusCode}');
       }
     } catch (e) {
+      print('🔴 GEMINI EXCEPTION: $e');
       return _errorState('Connection error. Please try again.');
     }
   }
@@ -102,8 +123,10 @@ Rules:
     Map<String, dynamic> data = {};
     if (intent == morphic.Intent.inventory) {
       data['products'] = products;
+      print('📦 Added ${products.length} products to data');
     } else if (intent == morphic.Intent.finance) {
       data['expenses'] = expenses;
+      print('💰 Added ${expenses.length} expenses to data');
     } else if (intent == morphic.Intent.retail && entities.containsKey('product_name')) {
       final productName = entities['product_name'];
       final product = products.firstWhere(
@@ -111,7 +134,10 @@ Rules:
         orElse: () => products.first,
       );
       data['product'] = product;
+      print('🖼️ Added product: ${product.name}');
     }
+
+    print('📊 Final data keys: ${data.keys.toList()}');
 
     return morphic.MorphicState(
       intent: intent,
