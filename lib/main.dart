@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/morphic_state.dart' as morphic;
-import 'services/openai_service.dart';
+import 'services/gemini_service.dart';
 import 'services/speech_service.dart';
 import 'services/elevenlabs_service.dart';
 import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  
   runApp(
     ChangeNotifierProvider(
       create: (_) => AppState(),
@@ -20,15 +24,18 @@ class AppState extends ChangeNotifier {
   final List<String> _conversationHistory = [];
   bool _isProcessing = false;
 
-  late OpenAIService _openAIService;
+  late GeminiService _geminiService;
   late SpeechService _speechService;
   late ElevenLabsService _elevenLabsService;
 
   morphic.MorphicState get currentState => _currentState;
   bool get isProcessing => _isProcessing;
 
-  void initialize(String openAIKey, String elevenLabsKey) {
-    _openAIService = OpenAIService(apiKey: openAIKey);
+  void initialize() {
+    final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    final elevenLabsKey = dotenv.env['ELEVENLABS_API_KEY'] ?? '';
+    
+    _geminiService = GeminiService(apiKey: geminiKey);
     _speechService = SpeechService();
     _elevenLabsService = ElevenLabsService(apiKey: elevenLabsKey);
   }
@@ -40,7 +47,7 @@ class AppState extends ChangeNotifier {
     try {
       _conversationHistory.add(transcription);
       
-      _currentState = await _openAIService.analyzeQuery(transcription);
+      _currentState = await _geminiService.analyzeQuery(transcription);
       notifyListeners();
 
       _elevenLabsService.speak(_currentState.narrative);
