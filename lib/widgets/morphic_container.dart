@@ -41,17 +41,26 @@ class MorphicContainer extends StatelessWidget {
   }
 
   Widget _getWidgetForMode() {
+    print('🎨 Building widget for mode: ${state.uiMode}');
+    print('🎨 Data keys available: ${state.data.keys.toList()}');
+    
     switch (state.uiMode) {
       case UIMode.table:
         final products = state.data['products'] as List<Product>? ?? [];
+        print('🎨 Table: ${products.length} products');
         return InventoryTable(products: products);
 
       case UIMode.chart:
         final expenses = state.data['expenses'] as List<Expense>? ?? [];
+        print('🎨 Chart: ${expenses.length} expenses');
+        if (expenses.isEmpty) {
+          print('⚠️ WARNING: No expenses data!');
+        }
         return FinanceChart(expenses: expenses);
 
       case UIMode.image:
         final product = state.data['product'] as Product?;
+        print('🎨 Image: ${product?.name ?? "null"}');
         if (product != null) {
           return ProductImageCard(product: product);
         }
@@ -59,6 +68,7 @@ class MorphicContainer extends StatelessWidget {
 
       case UIMode.narrative:
       default:
+        print('🎨 Narrative mode');
         return _buildNarrativeView();
     }
   }

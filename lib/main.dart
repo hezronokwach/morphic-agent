@@ -41,17 +41,22 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> processVoiceInput(String transcription) async {
+    print('\n🔄 START processVoiceInput: $transcription');
     _isProcessing = true;
     notifyListeners();
 
     try {
       _conversationHistory.add(transcription);
       
+      print('🔄 Calling Gemini...');
       _currentState = await _geminiService.analyzeQuery(transcription);
+      print('🔄 State updated: ${_currentState.uiMode}, data keys: ${_currentState.data.keys.toList()}');
       notifyListeners();
+      print('🔄 notifyListeners() called');
 
       _elevenLabsService.speak(_currentState.narrative);
     } catch (e) {
+      print('🔴 ERROR in processVoiceInput: $e');
       _currentState = morphic.MorphicState(
         intent: morphic.Intent.unknown,
         uiMode: morphic.UIMode.narrative,
@@ -62,6 +67,7 @@ class AppState extends ChangeNotifier {
     } finally {
       _isProcessing = false;
       notifyListeners();
+      print('🔄 END processVoiceInput\n');
     }
   }
 
