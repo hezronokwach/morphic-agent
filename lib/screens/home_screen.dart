@@ -18,9 +18,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    final appState = context.read<AppState>();
-    appState.initialize();
-    appState.initializeSpeech();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = context.read<AppState>();
+      appState.initialize();
+      appState.initializeSpeech();
+    });
   }
 
   Future<void> _handleMicPress() async {
@@ -44,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pet Boutique Assistant'),
+        title: const Text('Shoe Store Assistant'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
         actions: [
