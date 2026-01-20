@@ -23,28 +23,29 @@ Respond with this exact JSON structure:
 {
   "intent": "inventory" | "finance" | "retail" | "unknown",
   "ui_mode": "table" | "chart" | "image" | "narrative",
-  "narrative": "Brief, friendly response (1 sentence max)",
+  "header_text": "Contextual header (e.g., 'Price of Nike Air Max:')",
+  "narrative": "Brief answer or description",
   "entities": {"product_name": "...", "stock_filter": "<30", "query_type": "price|stock|details"},
   "confidence": 0.0-1.0
 }
 
 Rules:
 - Asking about ONE specific product (details/photo) → ui_mode: "image", intent: "retail"
-- Asking for price/stock of ONE product → ui_mode: "narrative" (show ONLY the answer, e.g. "\$120" or "15 units")
+- Asking for price/stock of ONE product → ui_mode: "narrative", header_text: "Price of [product]:" or "Stock of [product]:", narrative: just the value
 - Asking about MULTIPLE products or list → ui_mode: "table", intent: "inventory"
 - Filtering queries ("stock less than X") → ui_mode: "table", add stock_filter to entities
 - ANY expense/finance query → ui_mode: "chart", intent: "finance"
 - Calculations/summaries → ui_mode: "narrative"
 
 Examples:
-- "Show me Nike Air Max" → ui_mode: "image", entities: {"product_name": "Nike Air Max"}
-- "What's the price of Nike?" → ui_mode: "narrative", narrative: "\$120", entities: {"query_type": "price"}
-- "How many Puma do I have?" → ui_mode: "narrative", narrative: "22 units", entities: {"query_type": "stock"}
-- "Show me all products" → ui_mode: "table"
-- "Products with stock less than 30" → ui_mode: "table", entities: {"stock_filter": "<30"}
-- "Which expense is highest?" → ui_mode: "chart"
+- "Show me Nike Air Max" → ui_mode: "image", header_text: "Nike Air Max", entities: {"product_name": "Nike Air Max"}
+- "What's the price of Nike?" → ui_mode: "narrative", header_text: "Price of Nike Air Max:", narrative: "\$120", entities: {"query_type": "price"}
+- "How many Puma do I have?" → ui_mode: "narrative", header_text: "Stock of Puma Running Shoes:", narrative: "22 units", entities: {"query_type": "stock"}
+- "Show me all products" → ui_mode: "table", header_text: "Product Inventory"
+- "Products with stock less than 30" → ui_mode: "table", header_text: "Low Stock Products", entities: {"stock_filter": "<30"}
+- "Which expense is highest?" → ui_mode: "chart", header_text: "Expense Breakdown"
 
-Narrative should be SHORT and DIFFERENT from the header text!''';
+ALWAYS provide header_text with context!''';
   }
 
   Future<morphic.MorphicState> analyzeQuery(String userInput) async {
@@ -110,6 +111,7 @@ Narrative should be SHORT and DIFFERENT from the header text!''';
     final intentStr = response['intent'] ?? 'unknown';
     final uiModeStr = response['ui_mode'] ?? 'narrative';
     final narrative = response['narrative'] ?? 'I\'m not sure how to help with that.';
+    final headerText = response['header_text'];
     final confidence = (response['confidence'] ?? 1.0).toDouble();
     final entities = response['entities'] ?? {};
 
@@ -170,6 +172,7 @@ Narrative should be SHORT and DIFFERENT from the header text!''';
       intent: intent,
       uiMode: uiMode,
       narrative: narrative,
+      headerText: headerText,
       data: data,
       confidence: confidence,
     );

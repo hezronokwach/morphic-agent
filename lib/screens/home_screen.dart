@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  appState.currentState.narrative,
+                  appState.currentState.headerText ?? appState.currentState.narrative,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

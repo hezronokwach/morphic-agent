@@ -6,6 +6,7 @@ class MorphicState {
   final Intent intent;
   final UIMode uiMode;
   final String narrative;
+  final String? headerText;
   final Map<String, dynamic> data;
   final double confidence;
 
@@ -13,6 +14,7 @@ class MorphicState {
     required this.intent,
     required this.uiMode,
     required this.narrative,
+    this.headerText,
     this.data = const {},
     this.confidence = 1.0,
   });
