@@ -100,7 +100,7 @@ class AppState extends ChangeNotifier {
           );
         } else if (productId != null) {
           BusinessData.updateStock(productId, newStock);
-          Account.debit(totalCost, 'Purchased $quantity units of $productName');
+          Account.debit(totalCost, 'Purchased $quantity units of $productName', productName);
           final newBalance = Account.getAvailableFunds();
           _currentState = morphic.MorphicState(
             intent: morphic.Intent.inventory,
