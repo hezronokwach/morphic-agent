@@ -3,15 +3,10 @@ import '../main.dart';
 
 class DemoMode {
   static final List<String> demoQueries = [
-    "Show me all products",              // Table - full inventory
-    "Which expense is highest?",         // Chart - visual comparison  
-    "Show me the photo of Nike Air Max", // Image - specific product
-    "What's our total inventory value?", // Narrative - summary text
-    "Show me the total inventory value",
-    "How much is the Nike Air Max",
-    "Show me Addidas shows that we have",
-    "Which product has the lowest stock",
-    "How much money is in my account?",
+    "Show me all products",
+    "Which expense is highest?",
+    "Show me Nike Air Max",
+    "Add 20 more Nike Air Max",
   ];
 
   static Future<void> runDemo(AppState state) async {
