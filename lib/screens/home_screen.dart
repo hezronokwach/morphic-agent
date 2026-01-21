@@ -72,7 +72,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               Expanded(
-                child: MorphicContainer(state: appState.currentState),
+                child: MorphicContainer(
+                  state: appState.currentState,
+                  onActionConfirm: appState.handleActionConfirm,
+                  onActionCancel: appState.handleActionCancel,
+                ),
               ),
               _buildBottomControls(appState),
             ],
