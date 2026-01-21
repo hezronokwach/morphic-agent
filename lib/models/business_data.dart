@@ -38,15 +38,33 @@ class Account {
   
   static double get balance => _balance;
   
-  static void debit(double amount, String description) {
+  static void debit(double amount, String description, String productName) {
     _balance -= amount;
-    _expenses.add(Expense(
+    
+    // Determine supplier based on product
+    String supplier = 'Supplier';
+    if (productName.contains('Nike')) {
+      supplier = 'Nike Supplier';
+    } else if (productName.contains('Adidas')) {
+      supplier = 'Adidas Supplier';
+    } else if (productName.contains('Puma')) {
+      supplier = 'Puma Supplier';
+    } else if (productName.contains('Reebok')) {
+      supplier = 'Reebok Supplier';
+    } else if (productName.contains('New Balance')) {
+      supplier = 'New Balance Supplier';
+    }
+    
+    final expense = Expense(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      category: 'Inventory Purchase',
+      category: supplier,
       amount: amount,
       date: DateTime.now(),
       description: description,
-    ));
+    );
+    _expenses.add(expense);
+    print('💳 Expense added: ${expense.category} - \$${amount.toStringAsFixed(2)} - $description');
+    print('💳 Total expenses now: ${_expenses.length}');
   }
   
   static void credit(double amount) {
@@ -170,6 +188,9 @@ class BusinessData {
       ),
     ];
     
-    return [...fixedExpenses, ...Account.getExpenses()];
+    final accountExpenses = Account.getExpenses();
+    print('📊 getExpenses called: ${fixedExpenses.length} fixed + ${accountExpenses.length} account = ${fixedExpenses.length + accountExpenses.length} total');
+    
+    return [...fixedExpenses, ...accountExpenses];
   }
 }
