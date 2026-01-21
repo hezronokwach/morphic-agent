@@ -41,18 +41,14 @@ class Account {
   static void debit(double amount, String description, String productName) {
     _balance -= amount;
     
-    // Determine supplier based on product
-    String supplier = 'Supplier';
-    if (productName.contains('Nike')) {
-      supplier = 'Nike Supplier';
-    } else if (productName.contains('Adidas')) {
-      supplier = 'Adidas Supplier';
-    } else if (productName.contains('Puma')) {
-      supplier = 'Puma Supplier';
-    } else if (productName.contains('Reebok')) {
-      supplier = 'Reebok Supplier';
-    } else if (productName.contains('New Balance')) {
-      supplier = 'New Balance Supplier';
+    // Extract brand/supplier from product name
+    String supplier = 'General Supplier';
+    
+    // Split product name and use first word as brand
+    final words = productName.split(' ');
+    if (words.isNotEmpty) {
+      final brand = words[0];
+      supplier = '$brand Supplier';
     }
     
     final expense = Expense(

@@ -48,8 +48,12 @@ Financial Examples:
 
 CRUD Examples:
 - "Add 20 more Nike Air Max" → intent: "updateStock", ui_mode: "action", entities: {"product_name": "Nike Air Max", "quantity": 20}
+- "Order 30 Converse shoes at R80 each" → intent: "addProduct", ui_mode: "action", entities: {"product_name": "Converse All Star", "quantity": 30, "price": 80}
+- "Add new product: Jordan Retro, 25 units, 140" → intent: "addProduct", ui_mode: "action", entities: {"product_name": "Jordan Retro", "quantity": 25, "price": 140}
 - "Delete Puma shoes" → intent: "deleteProduct", ui_mode: "action", entities: {"product_name": "Puma Running Shoes"}
 - "Increase Adidas stock by 15" → intent: "updateStock", ui_mode: "action", entities: {"product_name": "Adidas Ultraboost", "quantity": 15}
+
+IMPORTANT: If user tries to order/add stock for a product NOT in inventory, use intent: "addProduct" (not "unknown")
 
 Query Examples:
 - "Show me Nike Air Max" → ui_mode: "image", header_text: "Nike Air Max", entities: {"product_name": "Nike Air Max"}
@@ -146,22 +150,39 @@ ALWAYS provide header_text with context!''';
       // CRUD operations
       actionType = intent.name;
       final productName = entities['product_name'];
-      final product = products.firstWhere(
-        (p) => p.name.toLowerCase().contains(productName.toLowerCase()),
-        orElse: () => products.first,
-      );
       
-      data['action_type'] = actionType;
-      data['action_data'] = {
-        'product_name': product.name,
-        'product_id': product.id,
-        'current_stock': product.stockCount,
-        'quantity': entities['quantity'] ?? 0,
-        'price': entities['price'] ?? product.price,
-        'stock': entities['stock'] ?? 0,
-        'product_price': product.price,
-      };
-      print('⚡ CRUD Action: $actionType for ${product.name}');
+      if (intent == morphic.Intent.addProduct) {
+        // New product - use provided data
+        data['action_type'] = actionType;
+        data['action_data'] = {
+          'product_name': productName,
+          'product_id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'current_stock': 0,
+          'quantity': entities['quantity'] ?? 0,
+          'price': entities['price'] ?? 100.0,
+          'stock': entities['quantity'] ?? 0,
+          'product_price': entities['price'] ?? 100.0,
+        };
+        print('⚡ CRUD Action: $actionType for NEW product $productName');
+      } else {
+        // Existing product
+        final product = products.firstWhere(
+          (p) => p.name.toLowerCase().contains(productName.toLowerCase()),
+          orElse: () => products.first,
+        );
+        
+        data['action_type'] = actionType;
+        data['action_data'] = {
+          'product_name': product.name,
+          'product_id': product.id,
+          'current_stock': product.stockCount,
+          'quantity': entities['quantity'] ?? 0,
+          'price': entities['price'] ?? product.price,
+          'stock': entities['stock'] ?? 0,
+          'product_price': product.price,
+        };
+        print('⚡ CRUD Action: $actionType for ${product.name}');
+      }
     } else if (intent == morphic.Intent.inventory) {
       var filteredProducts = products;
       

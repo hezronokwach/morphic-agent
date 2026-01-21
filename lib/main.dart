@@ -123,6 +123,40 @@ class AppState extends ChangeNotifier {
           );
         }
         break;
+      case 'addProduct':
+        final quantity = actionData['quantity'] as int;
+        final productPrice = actionData['product_price'] as double;
+        final totalCost = quantity * productPrice;
+        
+        if (!Account.canAfford(totalCost)) {
+          _currentState = morphic.MorphicState(
+            intent: morphic.Intent.unknown,
+            uiMode: morphic.UIMode.narrative,
+            narrative: 'Insufficient funds! You need \$${totalCost.toStringAsFixed(2)} but only have \$${Account.getAvailableFunds().toStringAsFixed(2)} available.',
+            headerText: 'Order Failed',
+            confidence: 1.0,
+          );
+        } else {
+          final newProduct = Product(
+            id: actionData['product_id'] as String,
+            name: productName,
+            stockCount: quantity,
+            price: productPrice,
+            imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
+            category: 'shoes',
+          );
+          BusinessData.addProduct(newProduct);
+          Account.debit(totalCost, 'Purchased $quantity units of $productName', productName);
+          final newBalance = Account.getAvailableFunds();
+          _currentState = morphic.MorphicState(
+            intent: morphic.Intent.inventory,
+            uiMode: morphic.UIMode.narrative,
+            narrative: 'New product added! $productName with $quantity units. \$${totalCost.toStringAsFixed(2)} deducted. New balance: \$${newBalance.toStringAsFixed(2)}',
+            headerText: 'Product Added',
+            confidence: 1.0,
+          );
+        }
+        break;
     }
     
     notifyListeners();
