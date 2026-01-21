@@ -4,11 +4,19 @@ import '../models/business_data.dart';
 import 'inventory_table.dart';
 import 'finance_chart.dart';
 import 'product_image_card.dart';
+import 'action_card.dart';
 
 class MorphicContainer extends StatelessWidget {
   final MorphicState state;
+  final Function(String, Map<String, dynamic>)? onActionConfirm;
+  final VoidCallback? onActionCancel;
 
-  const MorphicContainer({super.key, required this.state});
+  const MorphicContainer({
+    super.key,
+    required this.state,
+    this.onActionConfirm,
+    this.onActionCancel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +71,20 @@ class MorphicContainer extends StatelessWidget {
         print('🎨 Image: ${product?.name ?? "null"}');
         if (product != null) {
           return ProductImageCard(product: product);
+        }
+        return _buildNarrativeView();
+
+      case UIMode.action:
+        final actionType = state.data['action_type'] as String?;
+        final actionData = state.data['action_data'] as Map<String, dynamic>?;
+        print('🎨 Action: $actionType');
+        if (actionType != null && actionData != null) {
+          return ActionCard(
+            actionType: actionType,
+            actionData: actionData,
+            onConfirm: () => onActionConfirm?.call(actionType, actionData),
+            onCancel: () => onActionCancel?.call(),
+          );
         }
         return _buildNarrativeView();
 
