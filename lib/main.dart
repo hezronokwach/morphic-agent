@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/morphic_state.dart' as morphic;
@@ -7,6 +8,7 @@ import 'services/gemini_service.dart';
 import 'services/speech_service.dart';
 import 'services/elevenlabs_service.dart';
 import 'screens/home_screen.dart';
+import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +41,17 @@ class AppState extends ChangeNotifier {
     _geminiService = GeminiService(apiKey: geminiKey);
     _speechService = SpeechService();
     _elevenLabsService = ElevenLabsService(apiKey: elevenLabsKey);
+  }
+
+  Future<void> preloadImages(BuildContext context) async {
+    final products = BusinessData.getProducts();
+    for (var product in products) {
+      try {
+        await precacheImage(NetworkImage(product.imageUrl), context);
+      } catch (e) {
+        print('Failed to preload image: ${product.name}');
+      }
+    }
   }
 
   Future<void> processVoiceInput(String transcription) async {
@@ -185,11 +198,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Morphic Voice Agent',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.theme,
       home: const MyHomePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
