@@ -9,6 +9,11 @@ class FinanceChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('📊 FinanceChart building with ${expenses.length} expenses:');
+    for (var expense in expenses) {
+      print('   - ${expense.category}: \$${expense.amount}');
+    }
+    
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: BarChart(
