@@ -1,6 +1,6 @@
-enum UIMode { table, chart, image, narrative }
+enum UIMode { table, chart, image, narrative, action }
 
-enum Intent { inventory, finance, retail, unknown }
+enum Intent { inventory, finance, retail, unknown, updateStock, addProduct, deleteProduct, accountBalance }
 
 class MorphicState {
   final Intent intent;
