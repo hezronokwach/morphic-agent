@@ -20,9 +20,15 @@ Products: $productList | Balance: \$$balance
 
 JSON: {"intent":"inventory|finance|retail|updateStock|deleteProduct|addProduct|accountBalance","ui_mode":"table|chart|image|narrative|action","header_text":"...","narrative":"...","entities":{},"confidence":0-1}
 
-Rules: Balance→accountBalance+narrative | CRUD→action | 1product→image/narrative | Multi→table | Expenses→chart | NewProduct→addProduct
+Rules:
+- "can I afford" / "afford" → accountBalance+narrative (calculate: quantity × price, compare to balance, answer yes/no with numbers)
+- "order" / "buy" / "purchase" → updateStock+action
+- "show inventory" / "inventory" → inventory+table
+- "show [product]" / "display [product]" → retail+image+{"product_name":"[product]"}
+- "expenses" / "spending" → finance+chart
+- Balance query → accountBalance+narrative
 
-Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateStock,action,{"product_name":"Nike Air Max","quantity":20} | "show Nike"→retail,image''';
+Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max costs \$1200. You have \$$balance. Yes, you can afford it." | "show Nike Air Max"→retail,image,{"product_name":"Nike Air Max"} | "show inventory"→inventory,table''';
   }
 
   Future<morphic.MorphicState> analyzeQuery(String userInput) async {
@@ -141,6 +147,32 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
           'product_price': product.price,
         };
         print('⚡ CRUD Action: $actionType for ${product.name}');
+      }
+    } else if (intent == morphic.Intent.accountBalance) {
+      // Handle affordability checks
+      if (entities.containsKey('product_name') && entities.containsKey('quantity')) {
+        final productName = entities['product_name'];
+        final quantity = entities['quantity'] ?? 1;
+        final product = products.firstWhere(
+          (p) => p.name.toLowerCase().contains(productName.toLowerCase()),
+          orElse: () => products.first,
+        );
+        final totalCost = quantity * product.price;
+        final balance = Account.getAvailableFunds();
+        final canAfford = Account.canAfford(totalCost);
+        
+        final affordabilityText = canAfford 
+          ? '$quantity ${product.name} costs \$${totalCost.toStringAsFixed(0)}. You have \$${balance.toStringAsFixed(0)}. Yes, you can afford it!'
+          : '$quantity ${product.name} costs \$${totalCost.toStringAsFixed(0)}. You have \$${balance.toStringAsFixed(0)}. No, insufficient funds.';
+        
+        return morphic.MorphicState(
+          intent: intent,
+          uiMode: morphic.UIMode.narrative,
+          narrative: affordabilityText,
+          headerText: 'Affordability Check',
+          data: {},
+          confidence: confidence,
+        );
       }
     } else if (intent == morphic.Intent.inventory) {
       var filteredProducts = products;
