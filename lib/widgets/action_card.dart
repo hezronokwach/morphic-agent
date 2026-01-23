@@ -36,7 +36,7 @@ class ActionCard extends StatelessWidget {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppTheme.orange.withOpacity(0.1),
+                      color: AppTheme.orange.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(color: AppTheme.orange, width: 2),
                     ),
@@ -75,9 +75,9 @@ class ActionCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
@@ -131,7 +131,7 @@ class ActionCard extends StatelessWidget {
                           child: Text(
                             'CONFIRM',
                             style: TextStyle(
-                              color: canAfford ? AppTheme.white : AppTheme.white.withOpacity(0.5),
+                              color: canAfford ? AppTheme.white : AppTheme.white.withValues(alpha: 0.5),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -169,10 +169,6 @@ class ActionCard extends StatelessWidget {
       default:
         return Icons.help_outline;
     }
-  }
-
-  Color _getColor() {
-    return AppTheme.orange;
   }
 
   String _getTitle() {

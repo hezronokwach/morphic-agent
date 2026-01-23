@@ -147,9 +147,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.md, vertical: AppTheme.xs),
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: AppTheme.xs),
       decoration: BoxDecoration(
-        color: AppTheme.orange.withOpacity(0.1),
+        color: AppTheme.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.orange.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.orange.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -258,14 +258,14 @@ class BackgroundPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.emerald.withOpacity(0.04)
+      ..color = AppTheme.emerald.withValues(alpha: 0.04)
       ..strokeWidth = 1;
 
     const spacing = 50.0;
     for (double x = 0; x < size.width; x += spacing) {
       for (double y = 0; y < size.height; y += spacing) {
         canvas.drawCircle(Offset(x + 25, y + 25), 3, paint);
-        canvas.drawCircle(Offset(x, y), 1.5, paint..color = AppTheme.emerald.withOpacity(0.02));
+        canvas.drawCircle(Offset(x, y), 1.5, paint..color = AppTheme.emerald.withValues(alpha: 0.02));
       }
     }
   }

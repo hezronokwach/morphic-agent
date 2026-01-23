@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/morphic_state.dart' as morphic;
@@ -56,6 +55,8 @@ class AppState extends ChangeNotifier {
 
   Future<void> preloadImages(BuildContext context) async {
     final products = await BusinessData.getProducts();
+    if (!context.mounted) return;
+    
     for (var product in products) {
       try {
         await precacheImage(NetworkImage(product.imageUrl), context);
