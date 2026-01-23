@@ -4,17 +4,29 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class ElevenLabsService {
   final String apiKey;
   final String voiceId;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final FlutterTts _flutterTts = FlutterTts();
   final Map<String, String> _cache = {};
+  bool _useElevenLabs = true;
 
   ElevenLabsService({
     required this.apiKey,
-    this.voiceId = '21m00Tcm4TlvDq8ikWAM', // Default voice
-  });
+    this.voiceId = '21m00Tcm4TlvDq8ikWAM',
+  }) {
+    _initializeTts();
+  }
+
+  void _initializeTts() async {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+  }
 
   Future<Uint8List?> synthesizeSpeech(String text) async {
     if (_cache.containsKey(text)) {
@@ -76,14 +88,29 @@ class ElevenLabsService {
   }
 
   Future<void> speak(String text) async {
-    final audioBytes = await synthesizeSpeech(text);
-    if (audioBytes != null) {
-      await playAudio(audioBytes, cacheKey: text);
+    if (_useElevenLabs) {
+      try {
+        final audioBytes = await synthesizeSpeech(text);
+        if (audioBytes != null) {
+          await playAudio(audioBytes, cacheKey: text);
+          return;
+        }
+      } catch (e) {
+        _useElevenLabs = false;
+      }
+    }
+    
+    // Fallback to Flutter TTS
+    try {
+      await _flutterTts.speak(text);
+    } catch (e) {
+      // Silent fallback - do nothing
     }
   }
 
   Future<void> stop() async {
     await _audioPlayer.stop();
+    await _flutterTts.stop();
   }
 
   void dispose() {
