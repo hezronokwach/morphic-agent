@@ -26,6 +26,8 @@ class AppState extends ChangeNotifier {
   morphic.MorphicState _currentState = morphic.MorphicState.initial();
   final List<String> _conversationHistory = [];
   bool _isProcessing = false;
+  String _lastTranscription = '';
+  String? _errorMessage;
 
   late GeminiService _geminiService;
   late SpeechService _speechService;
@@ -33,6 +35,8 @@ class AppState extends ChangeNotifier {
 
   morphic.MorphicState get currentState => _currentState;
   bool get isProcessing => _isProcessing;
+  String get lastTranscription => _lastTranscription;
+  String? get errorMessage => _errorMessage;
 
   void initialize() {
     final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
@@ -55,38 +59,47 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> processVoiceInput(String transcription) async {
-    print('\n🔄 START processVoiceInput: $transcription');
+    _lastTranscription = transcription;
+    _errorMessage = null;
     _isProcessing = true;
     notifyListeners();
 
     try {
       _conversationHistory.add(transcription);
-      
-      print('🔄 Calling Gemini...');
       _currentState = await _geminiService.analyzeQuery(transcription);
-      print('🔄 State updated: ${_currentState.uiMode}, data keys: ${_currentState.data.keys.toList()}');
       notifyListeners();
-      print('🔄 notifyListeners() called');
-
       _elevenLabsService.speak(_currentState.narrative);
     } catch (e) {
-      print('🔴 ERROR in processVoiceInput: $e');
+      _errorMessage = e.toString().contains('SocketException') 
+          ? 'No internet connection' 
+          : e.toString().contains('TimeoutException')
+          ? 'Request timed out'
+          : 'Error: ${e.toString()}';
       _currentState = morphic.MorphicState(
         intent: morphic.Intent.unknown,
         uiMode: morphic.UIMode.narrative,
-        narrative: 'Sorry, something went wrong. Please try again.',
+        narrative: _errorMessage!,
         confidence: 0.0,
       );
       notifyListeners();
+      HapticFeedback.heavyImpact();
     } finally {
       _isProcessing = false;
       notifyListeners();
-      print('🔄 END processVoiceInput\n');
     }
   }
 
   Future<void> initializeSpeech() async {
-    await _speechService.initialize();
+    try {
+      final success = await _speechService.initialize();
+      if (!success) {
+        _errorMessage = 'Microphone permission denied';
+        notifyListeners();
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to initialize speech: $e';
+      notifyListeners();
+    }
   }
 
   void handleActionConfirm(String actionType, Map<String, dynamic> actionData) {
