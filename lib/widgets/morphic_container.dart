@@ -136,7 +136,7 @@ class MorphicContainer extends StatelessWidget {
               _buildWelcomeAnimation(),
             ] else ...[
               if (state.confidence < 0.7) ...[
-                const Icon(Icons.help_outline, size: 48, color: Colors.orange),
+                const Icon(Icons.help_outline, size: 48, color: Color(0xFF10B981)),
                 const SizedBox(height: 16),
                 const Text(
                   "I'm not quite sure. Could you rephrase?",
@@ -172,14 +172,14 @@ class MorphicContainer extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.orange.withOpacity(0.3), Colors.orange.withOpacity(0.1)],
+                    gradient: const LinearGradient(
+                      colors: [Color(0x4D10B981), Color(0x1A10B981)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.mic, size: 60, color: Colors.orange),
+                  child: const Icon(Icons.mic, size: 60, color: Color(0xFF10B981)),
                 ),
               ),
             );

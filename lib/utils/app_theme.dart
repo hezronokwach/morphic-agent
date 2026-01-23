@@ -133,10 +133,10 @@ class AppTheme {
     );
   }
   
-  // Legacy orange methods for compatibility
-  static Color get orange => emerald;
+  // Legacy orange compatibility - use const values
+  static const Color orange = emerald;
   static BoxDecoration orangeButton({bool isPressed = false}) => emeraldButton(isPressed: isPressed);
-  static LinearGradient get orangeGradient => emeraldGradient;
+  static const LinearGradient orangeGradient = emeraldGradient;
   
   // Animations
   static const Duration fast = Duration(milliseconds: 200);
