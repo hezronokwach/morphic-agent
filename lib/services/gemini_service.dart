@@ -10,9 +10,9 @@ class GeminiService {
 
   GeminiService({required this.apiKey});
 
-  String _buildSystemPrompt(List<Product> products, List<Expense> expenses) {
+  Future<String> _buildSystemPrompt(List<Product> products, List<Expense> expenses) async {
     final productList = products.map((p) => '${p.name}:\$${p.price},${p.stockCount}').join('|');
-    final balance = Account.getAvailableFunds().toStringAsFixed(0);
+    final balance = (await Account.getAvailableFunds()).toStringAsFixed(0);
 
     return '''Shoe store assistant. JSON only.
 
@@ -33,18 +33,16 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
 
   Future<morphic.MorphicState> analyzeQuery(String userInput) async {
     try {
-      final products = BusinessData.getProducts();
-      final expenses = BusinessData.getExpenses();
+      final products = await BusinessData.getProducts();
+      final expenses = await BusinessData.getExpenses();
 
       _conversationHistory.add(userInput);
       if (_conversationHistory.length > maxHistoryLength) {
         _conversationHistory.removeAt(0);
       }
 
-      final systemPrompt = _buildSystemPrompt(products, expenses);
+      final systemPrompt = await _buildSystemPrompt(products, expenses);
       final fullPrompt = '$systemPrompt\n\nUser query: $userInput\n\nRespond with JSON only:';
-
-      print('\n🔵 GEMINI REQUEST: $userInput');
 
       final response = await http
           .post(
@@ -68,29 +66,19 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('🟢 GEMINI RAW RESPONSE: ${response.body}');
-        
         final content = data['candidates'][0]['content']['parts'][0]['text'];
-        print('🟢 GEMINI PARSED CONTENT: $content');
-        
         final aiResponse = jsonDecode(content);
-        print('🟢 GEMINI AI RESPONSE: $aiResponse');
-
-        final result = _parseResponse(aiResponse, products, expenses);
-        print('🟢 FINAL STATE: intent=${result.intent}, uiMode=${result.uiMode}, narrative=${result.narrative}');
-        
+        final result = await _parseResponse(aiResponse, products, expenses);
         return result;
       } else {
-        print('🔴 GEMINI ERROR: ${response.statusCode} - ${response.body}');
         return _errorState('API error: ${response.statusCode}');
       }
     } catch (e) {
-      print('🔴 GEMINI EXCEPTION: $e');
       return _errorState('Connection error. Please try again.');
     }
   }
 
-  morphic.MorphicState _parseResponse(Map<String, dynamic> response, List<Product> products, List<Expense> expenses) {
+  Future<morphic.MorphicState> _parseResponse(Map<String, dynamic> response, List<Product> products, List<Expense> expenses) async {
     final intentStr = response['intent'] ?? 'unknown';
     final uiModeStr = response['ui_mode'] ?? 'narrative';
     final narrative = response['narrative'] ?? 'I\'m not sure how to help with that.';
@@ -128,7 +116,6 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
           'stock': int.tryParse(entities['quantity']?.toString() ?? '0') ?? 0,
           'product_price': double.tryParse(entities['price']?.toString() ?? '100.0') ?? 100.0,
         };
-        print('⚡ CRUD Action: $actionType for NEW product $productName');
       } else {
         // Existing product
         final product = products.firstWhere(
@@ -146,7 +133,6 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
           'stock': entities['stock'] ?? 0,
           'product_price': product.price,
         };
-        print('⚡ CRUD Action: $actionType for ${product.name}');
       }
     } else if (intent == morphic.Intent.accountBalance) {
       // Handle affordability checks
@@ -158,8 +144,8 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
           orElse: () => products.first,
         );
         final totalCost = quantity * product.price;
-        final balance = Account.getAvailableFunds();
-        final canAfford = Account.canAfford(totalCost);
+        final balance = await Account.getAvailableFunds();
+        final canAfford = await Account.canAfford(totalCost);
         
         final affordabilityText = canAfford 
           ? '$quantity ${product.name} costs \$${totalCost.toStringAsFixed(0)}. You have \$${balance.toStringAsFixed(0)}. Yes, you can afford it!'
@@ -183,11 +169,9 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
         if (filter.startsWith('<')) {
           final threshold = int.tryParse(filter.substring(1)) ?? 0;
           filteredProducts = filteredProducts.where((p) => p.stockCount < threshold).toList();
-          print('📦 Filtered to ${filteredProducts.length} products with stock < $threshold');
         } else if (filter.startsWith('>')) {
           final threshold = int.tryParse(filter.substring(1)) ?? 0;
           filteredProducts = filteredProducts.where((p) => p.stockCount > threshold).toList();
-          print('📦 Filtered to ${filteredProducts.length} products with stock > $threshold');
         }
       }
       
@@ -197,13 +181,11 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
         filteredProducts = filteredProducts.where(
           (p) => p.name.toLowerCase().contains(productName.toLowerCase())
         ).toList();
-        print('📦 Filtered to ${filteredProducts.length} products matching "$productName"');
       }
       
       data['products'] = filteredProducts;
     } else if (intent == morphic.Intent.finance) {
       data['expenses'] = expenses;
-      print('💰 Added ${expenses.length} expenses to data');
     } else if (intent == morphic.Intent.retail && entities.containsKey('product_name')) {
       final productName = entities['product_name'];
       final product = products.firstWhere(
@@ -211,10 +193,7 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
         orElse: () => products.first,
       );
       data['product'] = product;
-      print('🖼️ Added product: ${product.name}');
     }
-
-    print('📊 Final data keys: ${data.keys.toList()}');
 
     return morphic.MorphicState(
       intent: intent,
