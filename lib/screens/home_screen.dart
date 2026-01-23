@@ -73,6 +73,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             child: Column(
               children: [
                 _buildHeader(appState),
+                if (appState.lastTranscription.isNotEmpty)
+                  _buildTranscriptionBadge(appState.lastTranscription),
+                if (appState.errorMessage != null)
+                  _buildErrorBanner(appState.errorMessage!),
                 Expanded(
                   child: appState.isProcessing
                       ? _buildLoadingState()
@@ -116,6 +120,60 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(8),
               decoration: AppTheme.orangeButton(),
               child: const Icon(Icons.play_arrow, color: AppTheme.white, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTranscriptionBadge(String text) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppTheme.md, vertical: AppTheme.xs),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: AppTheme.xs),
+      decoration: BoxDecoration(
+        color: AppTheme.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.orange.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.mic, size: 16, color: AppTheme.orange),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '"$text"',
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.black,
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner(String error) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppTheme.md, vertical: AppTheme.xs),
+      padding: const EdgeInsets.all(AppTheme.sm),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              error,
+              style: TextStyle(fontSize: 14, color: Colors.red.shade900),
             ),
           ),
         ],
