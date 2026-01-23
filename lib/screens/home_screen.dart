@@ -117,27 +117,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget _buildHeader(AppState appState) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.md, vertical: AppTheme.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'MORPHIC AI',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.black,
-              letterSpacing: 1.2,
-            ),
-          ),
-          GestureDetector(
-            onTap: _showDemoDialog,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: AppTheme.orangeButton(),
-              child: const Icon(Icons.play_arrow, color: AppTheme.white, size: 18),
-            ),
-          ),
-        ],
+      child: const Text(
+        'MORPHIC AI',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.black,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -224,34 +211,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     );
   }
 
-  void _showDemoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.darkGray,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Demo Mode', style: AppTheme.narrativeText),
-        content: const Text('Run automated demo?', style: AppTheme.dataText),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.offWhite)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              DemoMode.runDemo(context.read<AppState>());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.orange,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Start', style: AppTheme.buttonText),
-          ),
-        ],
-      ),
-    );
-  }
+
 }
 
 class BackgroundPatternPainter extends CustomPainter {
