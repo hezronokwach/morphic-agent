@@ -123,10 +123,10 @@ Ex: "can I afford 10 Nike Air Max"→accountBalance,narrative,"10 Nike Air Max c
           'product_name': productName,
           'product_id': DateTime.now().millisecondsSinceEpoch.toString(),
           'current_stock': 0,
-          'quantity': entities['quantity'] ?? 0,
-          'price': entities['price'] ?? 100.0,
-          'stock': entities['quantity'] ?? 0,
-          'product_price': entities['price'] ?? 100.0,
+          'quantity': int.tryParse(entities['quantity']?.toString() ?? '0') ?? 0,
+          'price': double.tryParse(entities['price']?.toString() ?? '100.0') ?? 100.0,
+          'stock': int.tryParse(entities['quantity']?.toString() ?? '0') ?? 0,
+          'product_price': double.tryParse(entities['price']?.toString() ?? '100.0') ?? 100.0,
         };
         print('⚡ CRUD Action: $actionType for NEW product $productName');
       } else {
