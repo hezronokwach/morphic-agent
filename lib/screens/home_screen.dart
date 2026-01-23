@@ -52,7 +52,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     setState(() => _isListening = true);
     
     try {
-      final transcription = await appState.speechService.listen();
+      final transcription = await appState.speechService.listen(
+        onResult: (partialResult) {
+          appState.updateTranscription(partialResult);
+        },
+      );
       if (transcription.isNotEmpty) {
         await appState.processVoiceInput(transcription);
       }

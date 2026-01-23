@@ -58,7 +58,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> processVoiceInput(String transcription) async {
     print('\n🔄 START processVoiceInput: $transcription');
-    _lastTranscription = transcription;
+    _lastTranscription = ''; // Clear transcription when processing starts
     _isProcessing = true;
     notifyListeners();
 
@@ -188,6 +188,11 @@ class AppState extends ChangeNotifier {
       headerText: 'Cancelled',
       confidence: 1.0,
     );
+    notifyListeners();
+  }
+
+  void updateTranscription(String transcription) {
+    _lastTranscription = transcription;
     notifyListeners();
   }
 
