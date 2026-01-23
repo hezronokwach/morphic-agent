@@ -56,7 +56,7 @@ class MorphicContainer extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -79,26 +79,17 @@ class MorphicContainer extends StatelessWidget {
   }
 
   Widget _getWidgetForMode() {
-    print('🎨 Building widget for mode: ${state.uiMode}');
-    print('🎨 Data keys available: ${state.data.keys.toList()}');
-    
     switch (state.uiMode) {
       case UIMode.table:
         final products = state.data['products'] as List<Product>? ?? [];
-        print('🎨 Table: ${products.length} products');
         return InventoryTable(products: products);
 
       case UIMode.chart:
         final expenses = state.data['expenses'] as List<Expense>? ?? [];
-        print('🎨 Chart: ${expenses.length} expenses');
-        if (expenses.isEmpty) {
-          print('⚠️ WARNING: No expenses data!');
-        }
         return FinanceChart(expenses: expenses);
 
       case UIMode.image:
         final product = state.data['product'] as Product?;
-        print('🎨 Image: ${product?.name ?? "null"}');
         if (product != null) {
           return ProductImageCard(product: product);
         }
@@ -107,7 +98,6 @@ class MorphicContainer extends StatelessWidget {
       case UIMode.action:
         final actionType = state.data['action_type'] as String?;
         final actionData = state.data['action_data'] as Map<String, dynamic>?;
-        print('🎨 Action: $actionType');
         if (actionType != null && actionData != null) {
           return ActionCard(
             actionType: actionType,
@@ -119,8 +109,6 @@ class MorphicContainer extends StatelessWidget {
         return _buildNarrativeView();
 
       case UIMode.narrative:
-      default:
-        print('🎨 Narrative mode');
         return _buildNarrativeView();
     }
   }

@@ -18,132 +18,142 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAfford = _checkAffordability();
-    
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.all(24.0),
-        decoration: AppTheme.whiteCard(),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppTheme.orange.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.orange, width: 2),
-                ),
-                child: Icon(
-                  _getIcon(),
-                  size: 40,
-                  color: AppTheme.orange,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _getTitle(),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _getDescription(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (actionType == 'updateStock' && !canAfford) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+    return FutureBuilder<bool>(
+      future: _checkAffordability(),
+      builder: (context, snapshot) {
+        final canAfford = snapshot.data ?? true;
+        
+        return Center(
+          child: Container(
+            margin: const EdgeInsets.all(24.0),
+            decoration: AppTheme.whiteCard(),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppTheme.orange.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.orange, width: 2),
+                    ),
+                    child: Icon(
+                      _getIcon(),
+                      size: 40,
+                      color: AppTheme.orange,
+                    ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 16),
+                  Text(
+                    _getTitle(),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FutureBuilder<String>(
+                    future: _getDescription(),
+                    builder: (context, descSnapshot) {
+                      return Text(
+                        descSnapshot.data ?? 'Loading...',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppTheme.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      );
+                    },
+                  ),
+                  if (actionType == 'updateStock' && !canAfford) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.warning, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text(
+                            'Insufficient funds!',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Icon(Icons.warning, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text(
-                        'Insufficient funds!',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        decoration: AppTheme.blackCard(borderRadius: 8),
+                        child: TextButton(
+                          onPressed: onCancel,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                          ),
+                          child: const Text(
+                            'CANCEL',
+                            style: TextStyle(
+                              color: AppTheme.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        decoration: canAfford ? AppTheme.orangeButton() : AppTheme.blackCard(borderRadius: 8),
+                        child: TextButton(
+                          onPressed: canAfford ? onConfirm : null,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                          ),
+                          child: Text(
+                            'CONFIRM',
+                            style: TextStyle(
+                              color: canAfford ? AppTheme.white : AppTheme.white.withValues(alpha: 0.5),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    decoration: AppTheme.blackCard(borderRadius: 8),
-                    child: TextButton(
-                      onPressed: onCancel,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                      ),
-                      child: const Text(
-                        'CANCEL',
-                        style: TextStyle(
-                          color: AppTheme.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    decoration: canAfford ? AppTheme.orangeButton() : AppTheme.blackCard(borderRadius: 8),
-                    child: TextButton(
-                      onPressed: canAfford ? onConfirm : null,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                      ),
-                      child: Text(
-                        'CONFIRM',
-                        style: TextStyle(
-                          color: canAfford ? AppTheme.white : AppTheme.white.withOpacity(0.5),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  bool _checkAffordability() {
+  Future<bool> _checkAffordability() async {
     if (actionType == 'updateStock') {
       final quantity = actionData['quantity'] ?? 0;
       final productPrice = actionData['product_price'] ?? 0.0;
       final totalCost = quantity * productPrice;
-      return Account.canAfford(totalCost);
+      return await Account.canAfford(totalCost);
     }
     return true;
   }
@@ -161,10 +171,6 @@ class ActionCard extends StatelessWidget {
     }
   }
 
-  Color _getColor() {
-    return AppTheme.orange;
-  }
-
   String _getTitle() {
     switch (actionType) {
       case 'updateStock':
@@ -178,7 +184,7 @@ class ActionCard extends StatelessWidget {
     }
   }
 
-  String _getDescription() {
+  Future<String> _getDescription() async {
     final productName = actionData['product_name'] ?? 'Unknown';
     
     switch (actionType) {
@@ -188,7 +194,7 @@ class ActionCard extends StatelessWidget {
         final newStock = currentStock + quantity;
         final productPrice = actionData['product_price'] ?? 0.0;
         final totalCost = quantity * productPrice;
-        final availableFunds = Account.getAvailableFunds();
+        final availableFunds = await Account.getAvailableFunds();
         
         return 'Add $quantity units to $productName?\n'
                'Cost: \$${totalCost.toStringAsFixed(2)}\n'

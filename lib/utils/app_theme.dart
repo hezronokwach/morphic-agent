@@ -68,7 +68,6 @@ class AppTheme {
         primary: emerald,
         secondary: emeraldLight,
         surface: white,
-        background: offWhite,
       ),
       useMaterial3: true,
     );
@@ -81,12 +80,12 @@ class AppTheme {
       borderRadius: BorderRadius.circular(borderRadius),
       boxShadow: [
         BoxShadow(
-          color: black.withOpacity(0.08),
+          color: black.withValues(alpha: 0.08),
           blurRadius: 20,
           offset: const Offset(0, 10),
         ),
         BoxShadow(
-          color: emerald.withOpacity(0.1),
+          color: emerald.withValues(alpha: 0.1),
           blurRadius: 40,
           offset: const Offset(0, 20),
         ),
@@ -99,10 +98,10 @@ class AppTheme {
     return BoxDecoration(
       color: black,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: emerald.withOpacity(0.3), width: 1),
+      border: Border.all(color: emerald.withValues(alpha: 0.3), width: 1),
       boxShadow: [
         BoxShadow(
-          color: emerald.withOpacity(0.2),
+          color: emerald.withValues(alpha: 0.2),
           blurRadius: 30,
           offset: const Offset(0, 10),
         ),
@@ -118,14 +117,14 @@ class AppTheme {
       boxShadow: isPressed
           ? [
               BoxShadow(
-                color: emerald.withOpacity(0.3),
+                color: emerald.withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
             ]
           : [
               BoxShadow(
-                color: emerald.withOpacity(0.4),
+                color: emerald.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
