@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
 import '../widgets/morphic_container.dart';
 import '../utils/demo_mode.dart';
+import '../utils/app_theme.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -11,23 +13,42 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool _isListening = false;
-  bool _isDemoMode = false;
+  late AnimationController _pulseController;
+  late AnimationController _shineController;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    
+    _shineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = context.read<AppState>();
       appState.initialize();
       appState.initializeSpeech();
+      appState.preloadImages(context);
     });
   }
 
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _shineController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleMicPress() async {
+    HapticFeedback.heavyImpact();
     final appState = context.read<AppState>();
-    
     setState(() => _isListening = true);
     
     try {
@@ -36,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
         await appState.processVoiceInput(transcription);
       }
     } catch (e) {
-      // Handle error
+      HapticFeedback.heavyImpact();
     } finally {
       setState(() => _isListening = false);
     }
@@ -45,103 +66,141 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shoe Store Assistant'),
-        backgroundColor: const Color(0xFF1976D2),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showDemoModeDialog,
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.offWhite,
       body: Consumer<AppState>(
         builder: (context, appState, child) {
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  appState.currentState.headerText ?? appState.currentState.narrative,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+          return SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(appState),
+                Expanded(
+                  child: appState.isProcessing
+                      ? _buildLoadingState()
+                      : AnimatedSwitcher(
+                          duration: AppTheme.medium,
+                          child: MorphicContainer(
+                            key: ValueKey(appState.currentState.uiMode),
+                            state: appState.currentState,
+                            onActionConfirm: appState.handleActionConfirm,
+                            onActionCancel: appState.handleActionCancel,
+                          ),
+                        ),
                 ),
-              ),
-              Expanded(
-                child: MorphicContainer(state: appState.currentState),
-              ),
-              _buildBottomControls(appState),
-            ],
+                _buildMicButton(appState),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildBottomControls(AppState appState) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
+  Widget _buildHeader(AppState appState) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.md, vertical: AppTheme.sm),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          FloatingActionButton.large(
-            onPressed: appState.isProcessing ? null : _handleMicPress,
-            backgroundColor: _isListening
-                ? Colors.red
-                : appState.isProcessing
-                    ? Colors.grey
-                    : const Color(0xFF1976D2),
-            child: appState.isProcessing
-                ? const CircularProgressIndicator(color: Colors.white)
-                : Icon(
-                    _isListening ? Icons.mic : Icons.mic_none,
-                    size: 32,
-                    color: Colors.white,
-                  ),
+          const Text(
+            'MORPHIC AI',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.black,
+              letterSpacing: 1.2,
+            ),
           ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Reset to initial state
-            },
+          GestureDetector(
+            onTap: _showDemoDialog,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: AppTheme.orangeButton(),
+              child: const Icon(Icons.play_arrow, color: AppTheme.white, size: 18),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showDemoModeDialog() {
+  Widget _buildLoadingState() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.lg),
+        decoration: AppTheme.whiteCard(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: AppTheme.orangeGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.white),
+                  strokeWidth: 3,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppTheme.md),
+            const Text('Processing...', style: AppTheme.narrativeText),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMicButton(AppState appState) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.md),
+      child: GestureDetector(
+        onTap: appState.isProcessing ? null : _handleMicPress,
+        child: AnimatedContainer(
+          duration: AppTheme.fast,
+          width: 72,
+          height: 72,
+          decoration: _isListening
+              ? AppTheme.orangeButton()
+              : AppTheme.blackCard(borderRadius: 36),
+          child: Icon(
+            _isListening ? Icons.mic : Icons.mic_none,
+            size: 32,
+            color: _isListening ? AppTheme.white : AppTheme.orange,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDemoDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Demo Mode'),
-        content: const Text('Run automated demo with predefined queries?'),
+        backgroundColor: AppTheme.darkGray,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Demo Mode', style: AppTheme.narrativeText),
+        content: const Text('Run automated demo?', style: AppTheme.dataText),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.offWhite)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _runDemoMode();
+              DemoMode.runDemo(context.read<AppState>());
             },
-            child: const Text('Start Demo'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.orange,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Start', style: AppTheme.buttonText),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _runDemoMode() async {
-    setState(() => _isDemoMode = true);
-    final appState = context.read<AppState>();
-    await DemoMode.runDemo(appState);
-    setState(() => _isDemoMode = false);
   }
 }

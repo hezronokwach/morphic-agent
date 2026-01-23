@@ -11,41 +11,18 @@ class GeminiService {
   GeminiService({required this.apiKey});
 
   String _buildSystemPrompt(List<Product> products, List<Expense> expenses) {
-    final productList = products.map((p) => '${p.name} (${p.category}, stock: ${p.stockCount}, price: \$${p.price})').join(', ');
-    final expenseCategories = expenses.map((e) => e.category).toSet().join(', ');
+    final productList = products.map((p) => '${p.name}:\$${p.price},${p.stockCount}').join('|');
+    final balance = Account.getAvailableFunds().toStringAsFixed(0);
 
-    return '''You are a business assistant for a shoe store. Analyze user queries and respond with JSON.
+    return '''Shoe store assistant. JSON only.
 
-Available products: $productList
-Expense categories: $expenseCategories
+Products: $productList | Balance: \$$balance
 
-Respond with this exact JSON structure:
-{
-  "intent": "inventory" | "finance" | "retail" | "unknown",
-  "ui_mode": "table" | "chart" | "image" | "narrative",
-  "header_text": "Contextual header (e.g., 'Price of Nike Air Max:')",
-  "narrative": "Brief answer or description",
-  "entities": {"product_name": "...", "stock_filter": "<30", "query_type": "price|stock|details"},
-  "confidence": 0.0-1.0
-}
+JSON: {"intent":"inventory|finance|retail|updateStock|deleteProduct|addProduct|accountBalance","ui_mode":"table|chart|image|narrative|action","header_text":"...","narrative":"...","entities":{},"confidence":0-1}
 
-Rules:
-- Asking about ONE specific product (details/photo) → ui_mode: "image", intent: "retail"
-- Asking for price/stock of ONE product → ui_mode: "narrative", header_text: "Price of [product]:" or "Stock of [product]:", narrative: just the value
-- Asking about MULTIPLE products or list → ui_mode: "table", intent: "inventory"
-- Filtering queries ("stock less than X") → ui_mode: "table", add stock_filter to entities
-- ANY expense/finance query → ui_mode: "chart", intent: "finance"
-- Calculations/summaries → ui_mode: "narrative"
+Rules: Balance→accountBalance+narrative | CRUD→action | 1product→image/narrative | Multi→table | Expenses→chart | NewProduct→addProduct
 
-Examples:
-- "Show me Nike Air Max" → ui_mode: "image", header_text: "Nike Air Max", entities: {"product_name": "Nike Air Max"}
-- "What's the price of Nike?" → ui_mode: "narrative", header_text: "Price of Nike Air Max:", narrative: "\$120", entities: {"query_type": "price"}
-- "How many Puma do I have?" → ui_mode: "narrative", header_text: "Stock of Puma Running Shoes:", narrative: "22 units", entities: {"query_type": "stock"}
-- "Show me all products" → ui_mode: "table", header_text: "Product Inventory"
-- "Products with stock less than 30" → ui_mode: "table", header_text: "Low Stock Products", entities: {"stock_filter": "<30"}
-- "Which expense is highest?" → ui_mode: "chart", header_text: "Expense Breakdown"
-
-ALWAYS provide header_text with context!''';
+Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateStock,action,{"product_name":"Nike Air Max","quantity":20} | "show Nike"→retail,image''';
   }
 
   Future<morphic.MorphicState> analyzeQuery(String userInput) async {
@@ -126,7 +103,46 @@ ALWAYS provide header_text with context!''';
     );
 
     Map<String, dynamic> data = {};
-    if (intent == morphic.Intent.inventory) {
+    String? actionType;
+    
+    if (intent == morphic.Intent.updateStock || intent == morphic.Intent.deleteProduct || intent == morphic.Intent.addProduct) {
+      // CRUD operations
+      actionType = intent.name;
+      final productName = entities['product_name'];
+      
+      if (intent == morphic.Intent.addProduct) {
+        // New product - use provided data
+        data['action_type'] = actionType;
+        data['action_data'] = {
+          'product_name': productName,
+          'product_id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'current_stock': 0,
+          'quantity': entities['quantity'] ?? 0,
+          'price': entities['price'] ?? 100.0,
+          'stock': entities['quantity'] ?? 0,
+          'product_price': entities['price'] ?? 100.0,
+        };
+        print('⚡ CRUD Action: $actionType for NEW product $productName');
+      } else {
+        // Existing product
+        final product = products.firstWhere(
+          (p) => p.name.toLowerCase().contains(productName.toLowerCase()),
+          orElse: () => products.first,
+        );
+        
+        data['action_type'] = actionType;
+        data['action_data'] = {
+          'product_name': product.name,
+          'product_id': product.id,
+          'current_stock': product.stockCount,
+          'quantity': entities['quantity'] ?? 0,
+          'price': entities['price'] ?? product.price,
+          'stock': entities['stock'] ?? 0,
+          'product_price': product.price,
+        };
+        print('⚡ CRUD Action: $actionType for ${product.name}');
+      }
+    } else if (intent == morphic.Intent.inventory) {
       var filteredProducts = products;
       
       // Apply stock filter if present

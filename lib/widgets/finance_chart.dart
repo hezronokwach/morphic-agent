@@ -9,17 +9,33 @@ class FinanceChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Group expenses by category and sum amounts
+    final Map<String, double> groupedExpenses = {};
+    for (var expense in expenses) {
+      groupedExpenses[expense.category] = 
+          (groupedExpenses[expense.category] ?? 0) + expense.amount;
+    }
+    
+    final expenseList = groupedExpenses.entries
+        .map((e) => MapEntry(e.key, e.value))
+        .toList();
+    
+    print('📊 FinanceChart building with ${expenses.length} expenses grouped into ${expenseList.length} categories:');
+    for (var entry in expenseList) {
+      print('   - ${entry.key}: \$${entry.value.toStringAsFixed(0)}');
+    }
+    
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
-          maxY: expenses.map((e) => e.amount).reduce((a, b) => a > b ? a : b) * 1.2,
+          maxY: expenseList.map((e) => e.value).reduce((a, b) => a > b ? a : b) * 1.2,
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
-                  '${expenses[groupIndex].category}\n\$${rod.toY.toStringAsFixed(2)}',
+                  '${expenseList[groupIndex].key}\n\$${rod.toY.toStringAsFixed(2)}',
                   const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 );
               },
@@ -31,11 +47,11 @@ class FinanceChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  if (value.toInt() >= 0 && value.toInt() < expenses.length) {
+                  if (value.toInt() >= 0 && value.toInt() < expenseList.length) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        expenses[value.toInt()].category,
+                        expenseList[value.toInt()].key,
                         style: const TextStyle(fontSize: 10),
                       ),
                     );
@@ -57,13 +73,13 @@ class FinanceChart extends StatelessWidget {
             rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           borderData: FlBorderData(show: false),
-          barGroups: expenses.asMap().entries.map((entry) {
+          barGroups: expenseList.asMap().entries.map((entry) {
             return BarChartGroupData(
               x: entry.key,
               barRods: [
                 BarChartRodData(
-                  toY: entry.value.amount,
-                  color: _getColorForCategory(entry.value.category),
+                  toY: entry.value.value,
+                  color: _getColorForCategory(entry.value.key),
                   width: 20,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(6),
