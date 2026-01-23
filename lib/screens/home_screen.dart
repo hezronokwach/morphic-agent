@@ -71,32 +71,45 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.offWhite,
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          return SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(appState),
-                if (appState.lastTranscription.isNotEmpty)
-                  _buildTranscriptionBadge(appState.lastTranscription),
-                Expanded(
-                  child: appState.isProcessing
-                      ? _buildLoadingState()
-                      : AnimatedSwitcher(
-                          duration: AppTheme.medium,
-                          child: MorphicContainer(
-                            key: ValueKey(appState.currentState.uiMode),
-                            state: appState.currentState,
-                            onActionConfirm: appState.handleActionConfirm,
-                            onActionCancel: appState.handleActionCancel,
-                          ),
-                        ),
+      body: Stack(
+        children: [
+          _buildBackgroundPattern(),
+          Consumer<AppState>(
+            builder: (context, appState, child) {
+              return SafeArea(
+                child: Column(
+                  children: [
+                    _buildHeader(appState),
+                    if (appState.lastTranscription.isNotEmpty)
+                      _buildTranscriptionBadge(appState.lastTranscription),
+                    Expanded(
+                      child: appState.isProcessing
+                          ? _buildLoadingState()
+                          : AnimatedSwitcher(
+                              duration: AppTheme.medium,
+                              child: MorphicContainer(
+                                key: ValueKey(appState.currentState.uiMode),
+                                state: appState.currentState,
+                                onActionConfirm: appState.handleActionConfirm,
+                                onActionCancel: appState.handleActionCancel,
+                              ),
+                            ),
+                    ),
+                    _buildMicButton(appState),
+                  ],
                 ),
-                _buildMicButton(appState),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackgroundPattern() {
+    return Positioned.fill(
+      child: CustomPaint(
+        painter: BackgroundPatternPainter(),
       ),
     );
   }
@@ -239,4 +252,23 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       ),
     );
   }
+}
+
+class BackgroundPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppTheme.orange.withOpacity(0.03)
+      ..strokeWidth = 1;
+
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 2, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
