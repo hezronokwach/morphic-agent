@@ -44,7 +44,37 @@ class MorphicContainer extends StatelessWidget {
   Widget _buildContentForMode() {
     return Container(
       key: ValueKey(state.uiMode),
-      child: _getWidgetForMode(),
+      child: Column(
+        children: [
+          if (state.headerText != null && state.headerText!.isNotEmpty)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                state.headerText!,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          Expanded(child: _getWidgetForMode()),
+        ],
+      ),
     );
   }
 
@@ -102,24 +132,92 @@ class MorphicContainer extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (state.confidence < 0.7) ...[
-              const Icon(Icons.help_outline, size: 48, color: Colors.orange),
-              const SizedBox(height: 16),
-              const Text(
-                "I'm not quite sure. Could you rephrase?",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            if (state.narrative.isEmpty) ...[
+              _buildWelcomeAnimation(),
+            ] else ...[
+              if (state.confidence < 0.7) ...[
+                const Icon(Icons.help_outline, size: 48, color: Color(0xFF10B981)),
+                const SizedBox(height: 16),
+                const Text(
+                  "I'm not quite sure. Could you rephrase?",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                state.narrative,
+                style: const TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
             ],
-            Text(
-              state.narrative,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildWelcomeAnimation() {
+    return Column(
+      children: [
+        TweenAnimationBuilder<double>(
+          duration: const Duration(seconds: 2),
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: 0.8 + (0.2 * value),
+              child: Opacity(
+                opacity: value,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0x4D10B981), Color(0x1A10B981)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.mic, size: 60, color: Color(0xFF10B981)),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 1500),
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: const Column(
+                children: [
+                  Text(
+                    'Welcome to Morphic AI',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap the mic to start speaking',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

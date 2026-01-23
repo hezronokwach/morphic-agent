@@ -52,7 +52,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     setState(() => _isListening = true);
     
     try {
-      final transcription = await appState.speechService.listen();
+      final transcription = await appState.speechService.listen(
+        onResult: (partialResult) {
+          appState.updateTranscription(partialResult);
+        },
+      );
       if (transcription.isNotEmpty) {
         await appState.processVoiceInput(transcription);
       }
@@ -67,30 +71,45 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.offWhite,
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          return SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(appState),
-                Expanded(
-                  child: appState.isProcessing
-                      ? _buildLoadingState()
-                      : AnimatedSwitcher(
-                          duration: AppTheme.medium,
-                          child: MorphicContainer(
-                            key: ValueKey(appState.currentState.uiMode),
-                            state: appState.currentState,
-                            onActionConfirm: appState.handleActionConfirm,
-                            onActionCancel: appState.handleActionCancel,
-                          ),
-                        ),
+      body: Stack(
+        children: [
+          _buildBackgroundPattern(),
+          Consumer<AppState>(
+            builder: (context, appState, child) {
+              return SafeArea(
+                child: Column(
+                  children: [
+                    _buildHeader(appState),
+                    if (appState.lastTranscription.isNotEmpty)
+                      _buildTranscriptionBadge(appState.lastTranscription),
+                    Expanded(
+                      child: appState.isProcessing
+                          ? _buildLoadingState()
+                          : AnimatedSwitcher(
+                              duration: AppTheme.medium,
+                              child: MorphicContainer(
+                                key: ValueKey(appState.currentState.uiMode),
+                                state: appState.currentState,
+                                onActionConfirm: appState.handleActionConfirm,
+                                onActionCancel: appState.handleActionCancel,
+                              ),
+                            ),
+                    ),
+                    _buildMicButton(appState),
+                  ],
                 ),
-                _buildMicButton(appState),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackgroundPattern() {
+    return Positioned.fill(
+      child: CustomPaint(
+        painter: BackgroundPatternPainter(),
       ),
     );
   }
@@ -116,6 +135,36 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(8),
               decoration: AppTheme.orangeButton(),
               child: const Icon(Icons.play_arrow, color: AppTheme.white, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTranscriptionBadge(String text) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppTheme.md, vertical: AppTheme.xs),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: AppTheme.xs),
+      decoration: BoxDecoration(
+        color: AppTheme.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.orange.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.mic, size: 16, color: Color(0xFF10B981)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '"$text"',
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.black,
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -203,4 +252,24 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       ),
     );
   }
+}
+
+class BackgroundPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppTheme.emerald.withOpacity(0.04)
+      ..strokeWidth = 1;
+
+    const spacing = 50.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x + 25, y + 25), 3, paint);
+        canvas.drawCircle(Offset(x, y), 1.5, paint..color = AppTheme.emerald.withOpacity(0.02));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

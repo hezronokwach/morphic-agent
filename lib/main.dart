@@ -26,6 +26,7 @@ class AppState extends ChangeNotifier {
   morphic.MorphicState _currentState = morphic.MorphicState.initial();
   final List<String> _conversationHistory = [];
   bool _isProcessing = false;
+  String _lastTranscription = '';
 
   late GeminiService _geminiService;
   late SpeechService _speechService;
@@ -33,6 +34,7 @@ class AppState extends ChangeNotifier {
 
   morphic.MorphicState get currentState => _currentState;
   bool get isProcessing => _isProcessing;
+  String get lastTranscription => _lastTranscription;
 
   void initialize() {
     final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
@@ -56,6 +58,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> processVoiceInput(String transcription) async {
     print('\n🔄 START processVoiceInput: $transcription');
+    _lastTranscription = ''; // Clear transcription when processing starts
     _isProcessing = true;
     notifyListeners();
 
@@ -185,6 +188,11 @@ class AppState extends ChangeNotifier {
       headerText: 'Cancelled',
       confidence: 1.0,
     );
+    notifyListeners();
+  }
+
+  void updateTranscription(String transcription) {
+    _lastTranscription = transcription;
     notifyListeners();
   }
 

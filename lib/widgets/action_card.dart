@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/business_data.dart';
+import '../utils/app_theme.dart';
 
 class ActionCard extends StatelessWidget {
   final String actionType;
@@ -20,18 +21,27 @@ class ActionCard extends StatelessWidget {
     final canAfford = _checkAffordability();
     
     return Center(
-      child: Card(
+      child: Container(
         margin: const EdgeInsets.all(24.0),
-        elevation: 8,
+        decoration: AppTheme.whiteCard(),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                _getIcon(),
-                size: 64,
-                color: _getColor(),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppTheme.orange.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.orange, width: 2),
+                ),
+                child: Icon(
+                  _getIcon(),
+                  size: 40,
+                  color: AppTheme.orange,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -39,13 +49,17 @@ class ActionCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.black,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 _getDescription(),
-                style: const TextStyle(fontSize: 16),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.black,
+                ),
                 textAlign: TextAlign.center,
               ),
               if (actionType == 'updateStock' && !canAfford) ...[
@@ -53,19 +67,19 @@ class ActionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.warning, color: Colors.red),
-                      const SizedBox(width: 8),
+                      Icon(Icons.warning, color: Colors.red),
+                      SizedBox(width: 8),
                       Text(
                         'Insufficient funds!',
                         style: TextStyle(
-                          color: Colors.red.shade900,
+                          color: Colors.red,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -77,27 +91,43 @@ class ActionCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ElevatedButton(
-                    onPressed: onCancel,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                  Container(
+                    decoration: AppTheme.blackCard(borderRadius: 8),
+                    child: TextButton(
+                      onPressed: onCancel,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                      ),
+                      child: const Text(
+                        'CANCEL',
+                        style: TextStyle(
+                          color: AppTheme.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    child: const Text('CANCEL'),
                   ),
-                  ElevatedButton(
-                    onPressed: canAfford ? onConfirm : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: canAfford ? _getColor() : Colors.grey,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                  Container(
+                    decoration: canAfford ? AppTheme.orangeButton() : AppTheme.blackCard(borderRadius: 8),
+                    child: TextButton(
+                      onPressed: canAfford ? onConfirm : null,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                      ),
+                      child: Text(
+                        'CONFIRM',
+                        style: TextStyle(
+                          color: canAfford ? AppTheme.white : AppTheme.white.withOpacity(0.5),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    child: const Text('CONFIRM'),
                   ),
                 ],
               ),
@@ -132,16 +162,7 @@ class ActionCard extends StatelessWidget {
   }
 
   Color _getColor() {
-    switch (actionType) {
-      case 'updateStock':
-        return Colors.blue;
-      case 'deleteProduct':
-        return Colors.red;
-      case 'addProduct':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
+    return AppTheme.orange;
   }
 
   String _getTitle() {

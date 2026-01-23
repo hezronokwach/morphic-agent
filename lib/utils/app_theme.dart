@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Balanced Black, White, Orange Theme
+  // Modern White, Black, Emerald Theme
   static const Color black = Color(0xFF0A0A0A);
   static const Color darkGray = Color(0xFF1C1C1C);
   static const Color white = Color(0xFFFFFFFF);
-  static const Color offWhite = Color(0xFFF8F8F8);
-  static const Color lightGray = Color(0xFFE5E5E5);
-  static const Color orange = Color(0xFFFF6B35);  // Softer orange
-  static const Color orangeLight = Color(0xFFFF8C61);
-  static const Color orangeDark = Color(0xFFE85A2B);
+  static const Color offWhite = Color(0xFFF8FAFC);
+  static const Color lightGray = Color(0xFFE2E8F0);
+  static const Color emerald = Color(0xFF10B981);  // Modern emerald
+  static const Color emeraldLight = Color(0xFF34D399);
+  static const Color emeraldDark = Color(0xFF059669);
   
-  // Balanced Gradients
+  // Modern Gradients
   static const LinearGradient backgroundGradient = LinearGradient(
-    colors: [Color(0xFF1C1C1C), Color(0xFF0A0A0A)],
+    colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
   
   static const LinearGradient whiteGradient = LinearGradient(
-    colors: [Color(0xFFFFFFFF), Color(0xFFF5F5F5)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFF8FAFC)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   
-  static const LinearGradient orangeGradient = LinearGradient(
-    colors: [Color(0xFFFF8C61), Color(0xFFFF6B35)],
+  static const LinearGradient emeraldGradient = LinearGradient(
+    colors: [Color(0xFF34D399), Color(0xFF10B981)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -62,11 +62,11 @@ class AppTheme {
   // Theme
   static ThemeData get theme {
     return ThemeData(
-      primaryColor: orange,
+      primaryColor: emerald,
       scaffoldBackgroundColor: offWhite,
       colorScheme: const ColorScheme.light(
-        primary: orange,
-        secondary: orangeLight,
+        primary: emerald,
+        secondary: emeraldLight,
         surface: white,
         background: offWhite,
       ),
@@ -86,7 +86,7 @@ class AppTheme {
           offset: const Offset(0, 10),
         ),
         BoxShadow(
-          color: orange.withOpacity(0.1),
+          color: emerald.withOpacity(0.1),
           blurRadius: 40,
           offset: const Offset(0, 20),
         ),
@@ -99,10 +99,10 @@ class AppTheme {
     return BoxDecoration(
       color: black,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: orange.withOpacity(0.3), width: 1),
+      border: Border.all(color: emerald.withOpacity(0.3), width: 1),
       boxShadow: [
         BoxShadow(
-          color: orange.withOpacity(0.2),
+          color: emerald.withOpacity(0.2),
           blurRadius: 30,
           offset: const Offset(0, 10),
         ),
@@ -110,28 +110,33 @@ class AppTheme {
     );
   }
   
-  // Orange Button
-  static BoxDecoration orangeButton({bool isPressed = false}) {
+  // Emerald Button
+  static BoxDecoration emeraldButton({bool isPressed = false}) {
     return BoxDecoration(
-      gradient: orangeGradient,
+      gradient: emeraldGradient,
       borderRadius: BorderRadius.circular(16),
       boxShadow: isPressed
           ? [
               BoxShadow(
-                color: orange.withOpacity(0.3),
+                color: emerald.withOpacity(0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
             ]
           : [
               BoxShadow(
-                color: orange.withOpacity(0.4),
+                color: emerald.withOpacity(0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
             ],
     );
   }
+  
+  // Legacy orange compatibility - use const values
+  static const Color orange = emerald;
+  static BoxDecoration orangeButton({bool isPressed = false}) => emeraldButton(isPressed: isPressed);
+  static const LinearGradient orangeGradient = emeraldGradient;
   
   // Animations
   static const Duration fast = Duration(milliseconds: 200);

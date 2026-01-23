@@ -23,7 +23,7 @@ class MorphicState {
     return MorphicState(
       intent: Intent.unknown,
       uiMode: UIMode.narrative,
-      narrative: 'Hello! Ask me about inventory, finances, or products.',
+      narrative: '',
     );
   }
 }
