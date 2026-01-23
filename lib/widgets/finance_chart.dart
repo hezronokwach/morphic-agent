@@ -20,11 +20,6 @@ class FinanceChart extends StatelessWidget {
         .map((e) => MapEntry(e.key, e.value))
         .toList();
     
-    print('📊 FinanceChart building with ${expenses.length} expenses grouped into ${expenseList.length} categories:');
-    for (var entry in expenseList) {
-      print('   - ${entry.key}: \$${entry.value.toStringAsFixed(0)}');
-    }
-    
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: BarChart(
