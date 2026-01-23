@@ -7,12 +7,21 @@ import 'models/business_data.dart';
 import 'services/gemini_service.dart';
 import 'services/speech_service.dart';
 import 'services/elevenlabs_service.dart';
+import 'services/supabase_service.dart';
 import 'screens/home_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  
+  // Initialize Supabase
+  final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  
+  if (supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
+    await SupabaseService.initialize(supabaseUrl, supabaseAnonKey);
+  }
   
   runApp(
     ChangeNotifierProvider(
@@ -46,34 +55,27 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> preloadImages(BuildContext context) async {
-    final products = BusinessData.getProducts();
+    final products = await BusinessData.getProducts();
     for (var product in products) {
       try {
         await precacheImage(NetworkImage(product.imageUrl), context);
       } catch (e) {
-        print('Failed to preload image: ${product.name}');
+        // Silently handle image preload failures
       }
     }
   }
 
   Future<void> processVoiceInput(String transcription) async {
-    print('\n🔄 START processVoiceInput: $transcription');
-    _lastTranscription = ''; // Clear transcription when processing starts
+    _lastTranscription = '';
     _isProcessing = true;
     notifyListeners();
 
     try {
       _conversationHistory.add(transcription);
-      
-      print('🔄 Calling Gemini...');
       _currentState = await _geminiService.analyzeQuery(transcription);
-      print('🔄 State updated: ${_currentState.uiMode}, data keys: ${_currentState.data.keys.toList()}');
       notifyListeners();
-      print('🔄 notifyListeners() called');
-
       _elevenLabsService.speak(_currentState.narrative);
     } catch (e) {
-      print('🔴 ERROR in processVoiceInput: $e');
       _currentState = morphic.MorphicState(
         intent: morphic.Intent.unknown,
         uiMode: morphic.UIMode.narrative,
@@ -84,7 +86,6 @@ class AppState extends ChangeNotifier {
     } finally {
       _isProcessing = false;
       notifyListeners();
-      print('🔄 END processVoiceInput\n');
     }
   }
 
@@ -92,9 +93,7 @@ class AppState extends ChangeNotifier {
     await _speechService.initialize();
   }
 
-  void handleActionConfirm(String actionType, Map<String, dynamic> actionData) {
-    print('✅ Action confirmed: $actionType');
-    
+  void handleActionConfirm(String actionType, Map<String, dynamic> actionData) async {
     final productId = actionData['product_id'] as String?;
     final productName = actionData['product_name'] as String;
     
@@ -106,18 +105,19 @@ class AppState extends ChangeNotifier {
         final totalCost = quantity * productPrice;
         final newStock = currentStock + quantity;
         
-        if (!Account.canAfford(totalCost)) {
+        if (!(await Account.canAfford(totalCost))) {
+          final availableFunds = await Account.getAvailableFunds();
           _currentState = morphic.MorphicState(
             intent: morphic.Intent.unknown,
             uiMode: morphic.UIMode.narrative,
-            narrative: 'Insufficient funds! You need \$${totalCost.toStringAsFixed(2)} but only have \$${Account.getAvailableFunds().toStringAsFixed(2)} available.',
+            narrative: 'Insufficient funds! You need \$${totalCost.toStringAsFixed(2)} but only have \$${availableFunds.toStringAsFixed(2)} available.',
             headerText: 'Order Failed',
             confidence: 1.0,
           );
         } else if (productId != null) {
-          BusinessData.updateStock(productId, newStock);
-          Account.debit(totalCost, 'Purchased $quantity units of $productName', productName);
-          final newBalance = Account.getAvailableFunds();
+          await BusinessData.updateStock(productId, newStock);
+          await Account.debit(totalCost, 'Purchased $quantity units of $productName', productName);
+          final newBalance = await Account.getAvailableFunds();
           _currentState = morphic.MorphicState(
             intent: morphic.Intent.inventory,
             uiMode: morphic.UIMode.narrative,
@@ -129,7 +129,7 @@ class AppState extends ChangeNotifier {
         break;
       case 'deleteProduct':
         if (productId != null) {
-          BusinessData.deleteProduct(productId);
+          await BusinessData.deleteProduct(productId);
           _currentState = morphic.MorphicState(
             intent: morphic.Intent.inventory,
             uiMode: morphic.UIMode.narrative,
@@ -144,11 +144,12 @@ class AppState extends ChangeNotifier {
         final productPrice = actionData['product_price'] as double;
         final totalCost = quantity * productPrice;
         
-        if (!Account.canAfford(totalCost)) {
+        if (!(await Account.canAfford(totalCost))) {
+          final availableFunds = await Account.getAvailableFunds();
           _currentState = morphic.MorphicState(
             intent: morphic.Intent.unknown,
             uiMode: morphic.UIMode.narrative,
-            narrative: 'Insufficient funds! You need \$${totalCost.toStringAsFixed(2)} but only have \$${Account.getAvailableFunds().toStringAsFixed(2)} available.',
+            narrative: 'Insufficient funds! You need \$${totalCost.toStringAsFixed(2)} but only have \$${availableFunds.toStringAsFixed(2)} available.',
             headerText: 'Order Failed',
             confidence: 1.0,
           );
@@ -161,9 +162,9 @@ class AppState extends ChangeNotifier {
             imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
             category: 'shoes',
           );
-          BusinessData.addProduct(newProduct);
-          Account.debit(totalCost, 'Purchased $quantity units of $productName', productName);
-          final newBalance = Account.getAvailableFunds();
+          await BusinessData.addProduct(newProduct);
+          await Account.debit(totalCost, 'Purchased $quantity units of $productName', productName);
+          final newBalance = await Account.getAvailableFunds();
           _currentState = morphic.MorphicState(
             intent: morphic.Intent.inventory,
             uiMode: morphic.UIMode.narrative,
@@ -180,7 +181,6 @@ class AppState extends ChangeNotifier {
   }
 
   void handleActionCancel() {
-    print('❌ Action cancelled');
     _currentState = morphic.MorphicState(
       intent: morphic.Intent.unknown,
       uiMode: morphic.UIMode.narrative,
