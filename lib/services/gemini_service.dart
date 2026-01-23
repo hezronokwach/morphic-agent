@@ -38,8 +38,6 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
       final systemPrompt = _buildSystemPrompt(products, expenses);
       final fullPrompt = '$systemPrompt\n\nUser query: $userInput\n\nRespond with JSON only:';
 
-      print('\n🔵 GEMINI REQUEST: $userInput');
-
       final response = await http
           .post(
             Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=$apiKey'),
@@ -53,34 +51,24 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
                 }
               ],
               'generationConfig': {
-                'temperature': 0.7,
+                'temperature': 0.3,
+                'maxOutputTokens': 200,
                 'responseMimeType': 'application/json',
               }
             }),
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 3));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('🟢 GEMINI RAW RESPONSE: ${response.body}');
-        
         final content = data['candidates'][0]['content']['parts'][0]['text'];
-        print('🟢 GEMINI PARSED CONTENT: $content');
-        
         final aiResponse = jsonDecode(content);
-        print('🟢 GEMINI AI RESPONSE: $aiResponse');
-
-        final result = _parseResponse(aiResponse, products, expenses);
-        print('🟢 FINAL STATE: intent=${result.intent}, uiMode=${result.uiMode}, narrative=${result.narrative}');
-        
-        return result;
+        return _parseResponse(aiResponse, products, expenses);
       } else {
-        print('🔴 GEMINI ERROR: ${response.statusCode} - ${response.body}');
-        return _errorState('API error: ${response.statusCode}');
+        throw Exception('API error: ${response.statusCode}');
       }
     } catch (e) {
-      print('🔴 GEMINI EXCEPTION: $e');
-      return _errorState('Connection error. Please try again.');
+      throw Exception(e.toString().contains('TimeoutException') ? 'Request timed out' : e.toString());
     }
   }
 
@@ -106,12 +94,10 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
     String? actionType;
     
     if (intent == morphic.Intent.updateStock || intent == morphic.Intent.deleteProduct || intent == morphic.Intent.addProduct) {
-      // CRUD operations
       actionType = intent.name;
       final productName = entities['product_name'];
       
       if (intent == morphic.Intent.addProduct) {
-        // New product - use provided data
         data['action_type'] = actionType;
         data['action_data'] = {
           'product_name': productName,
@@ -122,9 +108,7 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
           'stock': entities['quantity'] ?? 0,
           'product_price': entities['price'] ?? 100.0,
         };
-        print('⚡ CRUD Action: $actionType for NEW product $productName');
       } else {
-        // Existing product
         final product = products.firstWhere(
           (p) => p.name.toLowerCase().contains(productName.toLowerCase()),
           orElse: () => products.first,
@@ -140,38 +124,31 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
           'stock': entities['stock'] ?? 0,
           'product_price': product.price,
         };
-        print('⚡ CRUD Action: $actionType for ${product.name}');
       }
     } else if (intent == morphic.Intent.inventory) {
       var filteredProducts = products;
       
-      // Apply stock filter if present
       if (entities.containsKey('stock_filter')) {
         final filter = entities['stock_filter'];
         if (filter.startsWith('<')) {
           final threshold = int.tryParse(filter.substring(1)) ?? 0;
           filteredProducts = filteredProducts.where((p) => p.stockCount < threshold).toList();
-          print('📦 Filtered to ${filteredProducts.length} products with stock < $threshold');
         } else if (filter.startsWith('>')) {
           final threshold = int.tryParse(filter.substring(1)) ?? 0;
           filteredProducts = filteredProducts.where((p) => p.stockCount > threshold).toList();
-          print('📦 Filtered to ${filteredProducts.length} products with stock > $threshold');
         }
       }
       
-      // Apply product name filter if present
       if (entities.containsKey('product_name')) {
         final productName = entities['product_name'];
         filteredProducts = filteredProducts.where(
           (p) => p.name.toLowerCase().contains(productName.toLowerCase())
         ).toList();
-        print('📦 Filtered to ${filteredProducts.length} products matching "$productName"');
       }
       
       data['products'] = filteredProducts;
     } else if (intent == morphic.Intent.finance) {
       data['expenses'] = expenses;
-      print('💰 Added ${expenses.length} expenses to data');
     } else if (intent == morphic.Intent.retail && entities.containsKey('product_name')) {
       final productName = entities['product_name'];
       final product = products.firstWhere(
@@ -179,10 +156,7 @@ Ex: "balance"→accountBalance,narrative,"\$$balance" | "add 20 Nike"→updateSt
         orElse: () => products.first,
       );
       data['product'] = product;
-      print('🖼️ Added product: ${product.name}');
     }
-
-    print('📊 Final data keys: ${data.keys.toList()}');
 
     return morphic.MorphicState(
       intent: intent,
